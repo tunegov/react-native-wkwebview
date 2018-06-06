@@ -1,6 +1,7 @@
 #import "RCTWKWebViewManager.h"
 
 #import "RCTWKWebView.h"
+#import "WKProcessPool+SharedProcessPool.h"
 #import <React/RCTBridge.h>
 #import <React/RCTUtils.h>
 #import <React/RCTUIManager.h>
@@ -29,23 +30,14 @@ RCT_ENUM_CONVERTER(UIScrollViewContentInsetAdjustmentBehavior, (@{
 @implementation RCTWKWebViewManager
 {
   NSConditionLock *_shouldStartLoadLock;
-  WKProcessPool *_processPool;
   BOOL _shouldStartLoad;
 }
 
 RCT_EXPORT_MODULE()
 
-- (id)init {
-  if (self = [super init]) {
-    _processPool = [[WKProcessPool alloc] init];
-  }
-    
-  return self;
-}
-
 - (UIView *)view
 {
-  RCTWKWebView *webView = [[RCTWKWebView alloc] initWithProcessPool:_processPool];
+  RCTWKWebView *webView = [[RCTWKWebView alloc] initWithProcessPool:[WKProcessPool sharedProcessPool]];
   webView.delegate = self;
   return webView;
 }
@@ -56,6 +48,9 @@ RCT_REMAP_VIEW_PROPERTY(pagingEnabled, _webView.scrollView.pagingEnabled, BOOL)
 RCT_REMAP_VIEW_PROPERTY(scrollEnabled, _webView.scrollView.scrollEnabled, BOOL)
 RCT_REMAP_VIEW_PROPERTY(directionalLockEnabled, _webView.scrollView.directionalLockEnabled, BOOL)
 RCT_REMAP_VIEW_PROPERTY(allowsBackForwardNavigationGestures, _webView.allowsBackForwardNavigationGestures, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(injectJavaScriptForMainFrameOnly, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(injectedJavaScriptForMainFrameOnly, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(injectJavaScript, NSString)
 RCT_EXPORT_VIEW_PROPERTY(injectedJavaScript, NSString)
 RCT_EXPORT_VIEW_PROPERTY(openNewWindowInWebView, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(contentInset, UIEdgeInsets)
@@ -68,6 +63,7 @@ RCT_EXPORT_VIEW_PROPERTY(onProgress, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onMessage, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(onScroll, RCTDirectEventBlock)
 RCT_EXPORT_VIEW_PROPERTY(hideKeyboardAccessoryView, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(keyboardDisplayRequiresUserAction, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(messagingEnabled, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(allowsLinkPreview, BOOL)
 #if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 /* __IPHONE_11_0 */
@@ -104,7 +100,7 @@ RCT_EXPORT_METHOD(canGoBack:(nonnull NSNumber *)reactTag
 {
   [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWKWebView *> *viewRegistry) {
     RCTWKWebView *view = viewRegistry[reactTag];
-    
+
     resolve([NSNumber numberWithBool:[view canGoBack]]);
   }];
 }
@@ -115,7 +111,7 @@ RCT_EXPORT_METHOD(canGoForward:(nonnull NSNumber *)reactTag
 {
   [self.bridge.uiManager addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, RCTWKWebView *> *viewRegistry) {
     RCTWKWebView *view = viewRegistry[reactTag];
-    
+
     resolve([NSNumber numberWithBool:[view canGoForward]]);
   }];
 }
